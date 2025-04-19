@@ -2,10 +2,15 @@ services:
   - type: web
     name: sqlite-api
     runtime: node
-    buildCommand: "npm install"
-    startCommand: "node init-db.js && node server.js"
+    buildCommand: npm install
+    startCommand: |
+      node init-db.js
+      node server.js
     plan: free
     disk:
       name: sqlite-data
       mountPath: /opt/render/project/src/data
       sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production

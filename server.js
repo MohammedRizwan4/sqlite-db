@@ -24,6 +24,26 @@ app.get('/users', (req, res) => {
   });
 });
 
+// Add this endpoint to check database status
+app.get('/debug/db-status', (req, res) => {
+  db.get("SELECT name FROM sqlite_master WHERE type='table'", [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ 
+        error: err.message,
+        dbPath: dbPath,
+        exists: fs.existsSync(dbPath),
+        directory: fs.existsSync(dataDir)
+      });
+    }
+    res.json({ 
+      tables: rows,
+      dbPath: dbPath,
+      exists: fs.existsSync(dbPath),
+      directory: fs.existsSync(dataDir)
+    });
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

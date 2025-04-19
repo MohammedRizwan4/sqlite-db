@@ -1,18 +1,35 @@
 const sqlite3 = require('sqlite3').verbose();
 const { promisify } = require('util');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, 'mydatabase.db');
+// Ensure data directory exists
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const dbPath = path.join(dataDir, 'mydatabase.db');
 const db = new sqlite3.Database(dbPath);
 
 const runAsync = promisify(db.run).bind(db);
 
-// Create tables and insert sample data
 async function setupDatabase() {
   try {
+    console.log('Starting database setup...');
+    console.log(`Database path: ${dbPath}`);
+
     // Enable foreign keys
     await runAsync('PRAGMA foreign_keys = ON');
     
+    // Drop existing tables if they exist
+    await runAsync('DROP TABLE IF EXISTS order_items');
+    await runAsync('DROP TABLE IF EXISTS orders');
+    await runAsync('DROP TABLE IF EXISTS products');
+    await runAsync('DROP TABLE IF EXISTS users');
+    
+    console.log('Dropped existing tables');
+
     // Create users table
     await runAsync(`
       CREATE TABLE users (
@@ -116,19 +133,30 @@ async function setupDatabase() {
     
     console.log('Database setup complete!');
     console.log(`Database file created at: ${dbPath}`);
+    
+    // Close the database connection properly
+    return new Promise((resolve, reject) => {
+      db.close((err) => {
+        if (err) {
+          console.error('Error closing database:', err.message);
+          reject(err);
+        } else {
+          console.log('Database connection closed');
+          resolve();
+        }
+      });
+    });
   } catch (error) {
     console.error('Error setting up database:', error);
-  } finally {
-    // Close the database connection
-    db.close((err) => {
-      if (err) {
-        console.error('Error closing database:', err.message);
-      } else {
-        console.log('Database connection closed');
-      }
-    });
+    process.exit(1); // Exit with error code
   }
 }
 
 // Run the setup
+setupDatabase().then(() => {
+  console.log('Setup completed successfully');
+  process.exit(0);
+}).catch((error) => {
+  console.error('Setup failed:', error);
+  process.exit(1);
 setupDatabase();
