@@ -159,4 +159,4 @@ setupDatabase().then(() => {
 }).catch((error) => {
   console.error('Setup failed:', error);
   process.exit(1);
-setupDatabase();
+});
